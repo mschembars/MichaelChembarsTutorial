@@ -7,9 +7,7 @@ library(ggplot2)
 library(dplyr)
 #Read in .csv
 data <- read.csv("fleas.csv")
-# Your dataset (assuming it's named "data")
-# Make sure your "Location" column is separated into latitude and longitude
-# You can do this by splitting the "Location" column
+# Make sure your Location column is separated into latitude and longitude
 data$Latitude <- as.numeric(sub(",.*", "", data$Location))
 data$Longitude <- as.numeric(sub(".*, ", "", data$Location))
 # Create a leaflet map
@@ -17,6 +15,7 @@ map <- leaflet(data) %>%
   # Add tiles
   addProviderTiles("OpenStreetMap.Mapnik") %>%
   # Add markers with different colors based on KDR presence
+  # Add popups for each data marker with individual ID and carrying host
   addCircleMarkers(
     lng = ~Longitude, lat = ~Latitude,
     data = subset(data, KDR.Presence == 1),
