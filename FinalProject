@@ -7,7 +7,7 @@ library(ggplot2)
 library(dplyr)
 #Read in .csv
 data <- read.csv("fleas.csv")
-# Make sure your Location column is separated into latitude and longitude
+# Location column must be separated into latitude and longitude
 data$Latitude <- as.numeric(sub(",.*", "", data$Location))
 data$Longitude <- as.numeric(sub(".*, ", "", data$Location))
 # Create a leaflet map
