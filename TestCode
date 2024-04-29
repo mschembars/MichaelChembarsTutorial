@@ -1,1 +1,59 @@
-library(tidyverse)
+#install.packages("leaflet", "leaflet.extras", "htmlwidgets", "ggplot2", "dplyr")
+#load packages
+library(leaflet)
+library(leaflet.extras)
+library(htmlwidgets)
+library(ggplot2)
+library(dplyr)
+#Read in .csv
+data <- read.csv("fleas.csv")
+# Your dataset (assuming it's named "data")
+# Make sure your "Location" column is separated into latitude and longitude
+# You can do this by splitting the "Location" column
+data$Latitude <- as.numeric(sub(",.*", "", data$Location))
+data$Longitude <- as.numeric(sub(".*, ", "", data$Location))
+# Create a leaflet map
+map <- leaflet(data) %>%
+  # Add tiles
+  addProviderTiles("OpenStreetMap.Mapnik") %>%
+  # Add markers with different colors based on KDR presence
+  addCircleMarkers(
+    lng = ~Longitude, lat = ~Latitude,
+    data = subset(data, KDR.Presence == 1),
+    radius = 5,
+    color = "red",
+    fillOpacity = 0.7,
+    popup = ~paste("Individual: ", Individual, "<br>",
+                   "Host: ", Host)
+  ) %>%
+  addCircleMarkers(
+    lng = ~Longitude, lat = ~Latitude,
+    data = subset(data, KDR.Presence == 0),
+    radius = 5,
+    color = "blue",
+    fillOpacity = 0.7,
+    popup = ~paste("Individual: ", Individual, "<br>",
+                   "Host: ", Host)
+  )
+# Display the map
+map
+#Save map as .html hyperlink
+saveWidget(map, file = "map.html", selfcontained = TRUE)
+# Calculate the prevalence of KDR mutation in each environment along with standard errors
+prevalence <- data %>%
+  group_by(Site) %>%
+  summarize(Prevalence = mean(KDR.Presence),
+            SE = sd(KDR.Presence) / sqrt(n()))
+# Create a bar plot with error bars
+ggplot(prevalence, aes(x = Site, y = Prevalence, fill = Site)) +
+  geom_bar(stat = "identity", width = 0.5) +  # Adjust width to 0.5 for half-sized bars
+  geom_errorbar(aes(ymin = Prevalence - SE, ymax = Prevalence + SE), width = 0.2) +  # Add error bars
+  labs(title = "Prevalence of KDR Mutation in Urban vs. Nonurban Environments",
+       x = "Environment",
+       y = "Prevalence",
+       fill = "Site Type") +  # Edit legend title
+  scale_fill_manual(values = c("urban" = "tan", "rural" = "tan",
+                               "urbanhighway" = "darkgray", "ruralhighway" = "darkgray"),
+                    name = "Site Type",  # Edit legend name
+                    labels = c("Urban (U)", "Rural (R)", "Urban Highway (UH)", "Rural Highway (RH)")) +  # Edit legend labels
+  theme_minimal()
